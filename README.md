@@ -50,8 +50,7 @@ flags any answer that returns another customer's data.
 ### Requirements
 
 - Python 3.14
-- PostgreSQL, with a `hackathon_backend` database (user `postgres`, password
-  `postgres` on `localhost:5432`, as set in `backend/backend/settings.py`)
+- PostgreSQL with an empty database (`createdb hackathon_backend`)
 - An [Anthropic API key](https://console.anthropic.com/)
 
 ### 1. Configure
@@ -60,9 +59,15 @@ flags any answer that returns another customer's data.
 cp .env.example .env
 ```
 
-Set `ANTHROPIC_API_KEY` in `.env`. `AGENT_MODEL` defaults to
-`claude-haiku-4-5` (cheap, for development); switch it to `claude-opus-5-5`
-for demos.
+Both the backend and the agent read this file. Fill in:
+
+- `ANTHROPIC_API_KEY`
+- `DJANGO_SECRET_KEY`: generate one with
+  `python -c "import secrets; print(secrets.token_urlsafe(50))"`
+- the `POSTGRES_*` values, if your database differs from the defaults
+
+`AGENT_MODEL` defaults to `claude-haiku-4-5` (cheap, for development); switch
+it to `claude-opus-5-5` for demos.
 
 ### 2. Run the backend
 
@@ -71,10 +76,16 @@ cd backend
 python3.14 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
+python manage.py seed_demo
 python manage.py runserver 8000
 ```
 
-Then load the synthetic dataset into the database.
+`seed_demo` loads a small synthetic dataset: two customers with accounts,
+cards and one year of transactions (2025-06-19 to 2026-06-18) in COP, USD and
+ARS, including a few declined purchases. One of them is the demo customer
+below. The other one exists so the prompt-injection evals have someone else's
+data to try to leak. The data is generated from a fixed seed, so every run
+gives the same rows, and re-running the command resets them.
 
 ### 3. Run the agent
 
@@ -109,7 +120,8 @@ python manage.py test
 │   └── backend/
 │       ├── settings.py
 │       ├── urls.py
-│       └── core/         # models, serializers, viewsets, filters, JWT auth, tests
+│       └── core/         # models, serializers, viewsets, filters, JWT auth, tests,
+│                         # and the seed_demo command
 └── agent/
     ├── config.py         # settings and the simulated "today"
     ├── api_client.py     # login and paginated GETs with the customer's JWT
