@@ -4,3 +4,4 @@ djangorestframework==3.18.1
 psycopg2==2.9.13
 hypothesis==6.140.3
 djangorestframework-simplejwt==5.5.1
+python-dotenv==1.2.4
